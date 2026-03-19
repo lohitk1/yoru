@@ -24,6 +24,11 @@
 .DS_Store
 *.pem
 
+# local only
+.claude/
+PLAN.md
+yoru-project-spec.md
+
 # debug
 npm-debug.log*
 yarn-debug.log*
