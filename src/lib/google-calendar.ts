@@ -86,11 +86,13 @@ export async function createEvent(
     description?: string;
     location?: string;
     attendees?: string[];
+    add_meet_link?: boolean;
   }
 ) {
   const calendar = await getCalendarClient(userId);
   const response = await calendar.events.insert({
     calendarId: "primary",
+    conferenceDataVersion: input.add_meet_link ? 1 : 0,
     requestBody: {
       summary: input.title,
       start: { dateTime: input.start_datetime },
@@ -98,6 +100,14 @@ export async function createEvent(
       description: input.description,
       location: input.location,
       attendees: input.attendees?.map((email) => ({ email })),
+      ...(input.add_meet_link && {
+        conferenceData: {
+          createRequest: {
+            requestId: `yoru-${Date.now()}`,
+            conferenceSolutionKey: { type: "hangoutsMeet" },
+          },
+        },
+      }),
     },
   });
   return response.data;

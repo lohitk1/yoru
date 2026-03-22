@@ -75,6 +75,10 @@ export const tools: Anthropic.Tool[] = [
           description: "List of attendee email addresses to invite",
         },
         location: { type: "string", description: "Event location" },
+        add_meet_link: {
+          type: "boolean",
+          description: "If true, automatically generates and attaches a Google Meet link to the event",
+        },
       },
       required: ["title", "start_datetime", "end_datetime"],
     },
