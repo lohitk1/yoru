@@ -31,7 +31,7 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingConversation, setLoadingConversation] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
