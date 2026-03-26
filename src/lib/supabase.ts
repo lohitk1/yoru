@@ -78,6 +78,72 @@ export async function markStatus(
   return data;
 }
 
+export interface ConversationSummary {
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  conversation_id: string;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+}
+
+export async function createConversation(userId: string, title: string): Promise<ConversationSummary> {
+  const { data, error } = await supabase
+    .from("conversations")
+    .insert({ user_id: userId, title })
+    .select("id, title, created_at, updated_at")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function listConversations(userId: string): Promise<ConversationSummary[]> {
+  const { data, error } = await supabase
+    .from("conversations")
+    .select("id, title, created_at, updated_at")
+    .eq("user_id", userId)
+    .order("updated_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getConversationMessages(conversationId: string, userId: string): Promise<ChatMessage[]> {
+  // Verify ownership via join
+  const { data: conv, error: convErr } = await supabase
+    .from("conversations")
+    .select("id")
+    .eq("id", conversationId)
+    .eq("user_id", userId)
+    .single();
+  if (convErr || !conv) return [];
+
+  const { data, error } = await supabase
+    .from("chat_messages")
+    .select("id, conversation_id, role, content, created_at")
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function saveMessage(conversationId: string, role: "user" | "assistant", content: string): Promise<void> {
+  const { error } = await supabase
+    .from("chat_messages")
+    .insert({ conversation_id: conversationId, role, content });
+  if (error) throw error;
+
+  await supabase
+    .from("conversations")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", conversationId);
+}
+
 export async function getStats(
   userId: string,
   input: {
