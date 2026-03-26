@@ -32,7 +32,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full overflow-hidden antialiased`}
     >
-      <body className="h-full overflow-hidden flex flex-col">{children}</body>
+      <body className="h-full overflow-hidden flex flex-col" suppressHydrationWarning>{children}</body>
     </html>
   );
 }

@@ -130,7 +130,7 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
   }
 
   return (
-    <div className="fixed inset-0 flex bg-black">
+    <div className="flex h-screen bg-black overflow-hidden">
       {/* Sidebar — collapsible on desktop, overlay on mobile */}
       {sidebarOpen && (
         <>
@@ -184,7 +184,7 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
         </div>
 
         {/* Message list */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-4">
           {loadingConversation ? (
             <div className="flex justify-center mt-8">
               <div className="flex gap-1 items-center">
