@@ -19,9 +19,10 @@ interface ApiMessage {
 interface Props {
   userName: string;
   initialConversations: ConversationSummary[];
+  onSignOut: () => Promise<void>;
 }
 
-export default function ChatInterface({ userName, initialConversations }: Props) {
+export default function ChatInterface({ userName, initialConversations, onSignOut }: Props) {
   const [conversations, setConversations] = useState<ConversationSummary[]>(initialConversations);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -165,6 +166,13 @@ export default function ChatInterface({ userName, initialConversations }: Props)
           </button>
           <h1 className="text-white font-semibold">Yoru</h1>
           <span className="text-zinc-500 text-sm">· {userName}</span>
+          <div className="ml-auto">
+            <form action={onSignOut}>
+              <button type="submit" className="text-zinc-500 hover:text-zinc-300 text-xs transition-colors">
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
 
         {/* Message list */}
