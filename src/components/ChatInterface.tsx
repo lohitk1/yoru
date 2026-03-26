@@ -132,7 +132,7 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
   }
 
   return (
-    <div className="fixed inset-0 flex bg-black">
+    <div className="flex h-screen bg-black overflow-hidden">
       {/* Sidebar — collapsible on desktop, overlay on mobile */}
       {sidebarOpen && (
         <>
