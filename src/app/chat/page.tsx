@@ -5,9 +5,9 @@ import ChatInterface from "@/components/ChatInterface";
 
 export default async function ChatPage() {
   const session = await auth();
-  if (!session?.supabaseUserId) redirect("/");
+  if (!session) redirect("/");
 
-  const conversations = await listConversations(session.supabaseUserId);
+  const conversations = session.supabaseUserId ? await listConversations(session.supabaseUserId) : [];
 
   return (
     <ChatInterface
