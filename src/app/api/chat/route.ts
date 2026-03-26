@@ -9,12 +9,12 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { message, conversationHistory } = await req.json();
+  const { message, conversationHistory, timezone } = await req.json();
   if (!message) {
     return Response.json({ error: "Missing message" }, { status: 400 });
   }
 
-  const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Los_Angeles";
+  const userTimezone = timezone || "America/Los_Angeles";
   const currentDateTime = new Date().toLocaleString("en-US", { timeZone: userTimezone });
   const systemPrompt = buildSystemPrompt(
     userTimezone,

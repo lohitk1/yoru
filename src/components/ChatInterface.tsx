@@ -38,7 +38,7 @@ export default function ChatInterface({ userName }: { userName: string }) {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, conversationHistory }),
+        body: JSON.stringify({ message: text, conversationHistory, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
       });
 
       const data = await res.json();
