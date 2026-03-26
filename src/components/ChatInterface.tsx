@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Sidebar from "./Sidebar";
+import CalendarOverlay from "./CalendarOverlay";
 import type { ConversationSummary } from "@/lib/supabase";
 
 interface Message {
@@ -31,6 +32,7 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
   const [loading, setLoading] = useState(false);
   const [loadingConversation, setLoadingConversation] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -163,7 +165,16 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
           </button>
           <h1 className="text-white font-semibold">Yoru</h1>
           <span className="text-zinc-500 text-sm">· {userName}</span>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-3">
+            <button
+              onClick={() => setCalendarOpen(true)}
+              className="text-zinc-400 hover:text-white transition-colors p-1 rounded-md hover:bg-zinc-800"
+              title="View today's calendar"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </button>
             <form action={onSignOut}>
               <button type="submit" className="text-zinc-500 hover:text-zinc-300 text-xs transition-colors">
                 Sign out
@@ -279,6 +290,7 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
           <p className="text-center text-zinc-700 text-xs mt-2">Enter to send · Shift+Enter for new line</p>
         </div>
       </div>
+      {calendarOpen && <CalendarOverlay onClose={() => setCalendarOpen(false)} />}
     </div>
   );
 }
