@@ -16,7 +16,18 @@ export async function POST(req: NextRequest) {
   }
 
   const userTimezone = timezone || "America/Los_Angeles";
-  const currentDateTime = new Date().toLocaleString("en-US", { timeZone: userTimezone });
+  const now = new Date();
+  const currentDateTime = now.toLocaleString("en-US", {
+    timeZone: userTimezone,
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZoneName: "short",
+  });
   const systemPrompt = buildSystemPrompt(
     userTimezone,
     currentDateTime,
