@@ -30,7 +30,7 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingConversation, setLoadingConversation] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -129,36 +129,33 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
 
   return (
     <div className="flex h-screen bg-black overflow-hidden">
-      {/* Sidebar — always visible on md+, overlay on mobile */}
-      <div
-        className={`
-          fixed inset-0 z-20 md:static md:z-auto md:flex
-          ${sidebarOpen ? "flex" : "hidden"}
-        `}
-      >
-        {/* Backdrop (mobile only) */}
-        <div
-          className="absolute inset-0 bg-black/60 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-        <div className="relative z-10">
-          <Sidebar
-            conversations={conversations}
-            activeId={activeConversationId}
-            onSelect={loadConversation}
-            onNewChat={startNewChat}
-            onClose={() => setSidebarOpen(false)}
+      {/* Sidebar — collapsible on desktop, overlay on mobile */}
+      {sidebarOpen && (
+        <>
+          {/* Backdrop (mobile only) */}
+          <div
+            className="fixed inset-0 z-20 bg-black/60 md:hidden"
+            onClick={() => setSidebarOpen(false)}
           />
-        </div>
-      </div>
+          <div className="fixed inset-y-0 left-0 z-30 md:static md:z-auto">
+            <Sidebar
+              conversations={conversations}
+              activeId={activeConversationId}
+              onSelect={loadConversation}
+              onNewChat={startNewChat}
+              onClose={() => setSidebarOpen(false)}
+            />
+          </div>
+        </>
+      )}
 
       {/* Main chat area */}
       <div className="flex flex-col flex-1 min-w-0">
         {/* Header */}
         <div className="flex items-center px-4 py-3 border-b border-zinc-800 gap-3">
           <button
-            onClick={() => setSidebarOpen(true)}
-            className="text-zinc-400 hover:text-white transition-colors p-1 rounded-md hover:bg-zinc-800 md:hidden"
+            onClick={() => setSidebarOpen((o) => !o)}
+            className="text-zinc-400 hover:text-white transition-colors p-1 rounded-md hover:bg-zinc-800"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
