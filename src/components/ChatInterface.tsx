@@ -8,7 +8,33 @@ import CalendarOverlay from "./CalendarOverlay";
 import TasksOverlay from "./TasksOverlay";
 import type { ConversationSummary } from "@/lib/supabase";
 
-// Web Speech API types
+// Web Speech API types (not in standard TS DOM lib)
+interface SpeechRecognitionAlternative {
+  readonly transcript: string;
+  readonly confidence: number;
+}
+interface SpeechRecognitionResult {
+  readonly length: number;
+  [index: number]: SpeechRecognitionAlternative;
+}
+interface SpeechRecognitionResultList {
+  readonly length: number;
+  [index: number]: SpeechRecognitionResult;
+}
+interface SpeechRecognitionEvent extends Event {
+  readonly results: SpeechRecognitionResultList;
+}
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  onstart: ((ev: Event) => void) | null;
+  onend: ((ev: Event) => void) | null;
+  onerror: ((ev: Event) => void) | null;
+  onresult: ((ev: SpeechRecognitionEvent) => void) | null;
+}
 declare global {
   interface Window {
     SpeechRecognition: new () => SpeechRecognition;
