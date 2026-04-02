@@ -37,20 +37,11 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
   const [tasksOpen, setTasksOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const briefingFired = useRef(false);
-
   useEffect(() => {
     if (messages.length > 0 || loading) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, loading]);
-
-  useEffect(() => {
-    if (briefingFired.current) return;
-    briefingFired.current = true;
-    triggerBriefing();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   async function loadConversation(id: string) {
     setLoadingConversation(true);
@@ -72,40 +63,6 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
     setMessages([]);
     setConversationHistory([]);
     inputRef.current?.focus();
-  }
-
-  async function triggerBriefing() {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: "__briefing__",
-          conversationHistory: [],
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        }),
-      });
-      const data = await res.json();
-      if (data.error) return;
-      setConversationHistory(data.conversationHistory);
-      setMessages([{ role: "assistant", content: data.response }]);
-      if (data.conversationId) {
-        setActiveConversationId(data.conversationId);
-        const newConv: ConversationSummary = {
-          id: data.conversationId,
-          title: "Daily briefing",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        setConversations((prev) => [newConv, ...prev]);
-      }
-    } catch {
-      // Silently fail — user can ask manually
-    } finally {
-      setLoading(false);
-      inputRef.current?.focus();
-    }
   }
 
   async function sendMessage() {

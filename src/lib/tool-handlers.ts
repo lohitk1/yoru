@@ -15,7 +15,7 @@ export async function handleToolCall(
 ): Promise<any> {
   switch (toolName) {
     case "get_events":
-      return getEvents(user.googleId, input as any);
+      return getEvents(user.googleId, input as any, user.supabaseUserId);
 
     case "find_free_slots":
       return findFreeSlots(user.googleId, input as any);

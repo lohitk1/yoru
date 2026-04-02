@@ -35,29 +35,21 @@ export async function POST(req: NextRequest) {
     session.user?.email ?? ""
   );
 
-  const isBriefing = message === "__briefing__";
-  const actualMessage = isBriefing
-    ? "Give me my daily briefing."
-    : message;
-
   try {
     // Create a new conversation on the first message
     let conversationId = existingConversationId;
     if (!conversationId) {
-      const title = isBriefing ? "Daily briefing" : (actualMessage.length > 50 ? actualMessage.slice(0, 50).trimEnd() + "…" : actualMessage);
+      const title = message.length > 50 ? message.slice(0, 50).trimEnd() + "…" : message;
       const conversation = await createConversation(session.supabaseUserId, title);
       conversationId = conversation.id;
     }
 
-    // Don't save the briefing trigger as a user message
-    if (!isBriefing) {
-      await saveMessage(conversationId, "user", actualMessage);
-    }
+    await saveMessage(conversationId, "user", message);
 
     const { response, updatedHistory } = await runChatLoop(
       { googleId: session.googleId, supabaseUserId: session.supabaseUserId, email: session.user?.email ?? "" },
       conversationHistory ?? [],
-      actualMessage,
+      message,
       systemPrompt
     );
 

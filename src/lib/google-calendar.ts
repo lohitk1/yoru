@@ -41,14 +41,14 @@ async function getCalendarClient(userId: string) {
   return google.calendar({ version: "v3", auth: oauth2Client });
 }
 
-async function enrichEventsWithMetadata(userId: string, events: any[]) {
+async function enrichEventsWithMetadata(supabaseUserId: string, events: any[]) {
   if (!events.length) return events;
 
   const eventIds = events.map((e) => e.id);
   const { data: metadataRows } = await supabase
     .from("event_metadata")
     .select("*")
-    .eq("user_id", userId)
+    .eq("user_id", supabaseUserId)
     .in("google_event_id", eventIds);
 
   const metaMap = new Map(metadataRows?.map((m: any) => [m.google_event_id, m]) ?? []);
@@ -61,7 +61,8 @@ async function enrichEventsWithMetadata(userId: string, events: any[]) {
 
 export async function getEvents(
   userId: string,
-  input: { start_datetime: string; end_datetime: string; query?: string }
+  input: { start_datetime: string; end_datetime: string; query?: string },
+  supabaseUserId?: string
 ) {
   const calendar = await getCalendarClient(userId);
   const response = await calendar.events.list({
@@ -74,7 +75,7 @@ export async function getEvents(
   });
 
   const events = response.data.items || [];
-  return enrichEventsWithMetadata(userId, events);
+  return enrichEventsWithMetadata(supabaseUserId ?? userId, events);
 }
 
 type RecurrenceInput = {

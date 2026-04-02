@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
-  if (!session?.googleId) {
+  if (!session?.googleId || !session?.supabaseUserId) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   const end = `${today}T23:59:59${offsetStr}`;
 
   try {
-    const events = await getEvents(session.googleId, { start_datetime: start, end_datetime: end });
+    const events = await getEvents(session.googleId, { start_datetime: start, end_datetime: end }, session.supabaseUserId);
     return Response.json({ events, date: today });
   } catch (err: any) {
     console.error("Calendar fetch error:", err);
