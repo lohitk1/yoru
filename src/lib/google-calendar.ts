@@ -77,6 +77,28 @@ export async function getEvents(
   return enrichEventsWithMetadata(userId, events);
 }
 
+type RecurrenceInput = {
+  frequency: "daily" | "weekly" | "monthly" | "yearly";
+  interval?: number;
+  days_of_week?: string[];
+  end_date?: string;
+  count?: number;
+};
+
+type ReminderInput = {
+  method: "popup" | "email";
+  minutes: number;
+};
+
+function buildRRule(r: RecurrenceInput): string {
+  const parts: string[] = [`FREQ=${r.frequency.toUpperCase()}`];
+  if (r.interval && r.interval > 1) parts.push(`INTERVAL=${r.interval}`);
+  if (r.days_of_week?.length) parts.push(`BYDAY=${r.days_of_week.join(",")}`);
+  if (r.end_date) parts.push(`UNTIL=${r.end_date.replace(/-/g, "")}T000000Z`);
+  else if (r.count) parts.push(`COUNT=${r.count}`);
+  return `RRULE:${parts.join(";")}`;
+}
+
 export async function createEvent(
   userId: string,
   userEmail: string,
@@ -88,6 +110,8 @@ export async function createEvent(
     location?: string;
     attendees?: string[];
     add_meet_link?: boolean;
+    recurrence?: RecurrenceInput;
+    reminders?: ReminderInput[];
   }
 ) {
   const calendar = await getCalendarClient(userId);
@@ -104,6 +128,10 @@ export async function createEvent(
         email,
         responseStatus: email === userEmail ? "accepted" : undefined,
       })),
+      recurrence: input.recurrence ? [buildRRule(input.recurrence)] : undefined,
+      reminders: input.reminders
+        ? { useDefault: false, overrides: input.reminders }
+        : undefined,
       ...(input.add_meet_link && {
         conferenceData: {
           createRequest: {
@@ -159,6 +187,8 @@ export async function updateEvent(
     description?: string;
     location?: string;
     attendees?: string[];
+    recurrence?: RecurrenceInput | null;
+    reminders?: ReminderInput[] | null;
   }
 ) {
   const calendar = await getCalendarClient(userId);
@@ -174,6 +204,12 @@ export async function updateEvent(
   if (input.description !== undefined) updated.description = input.description;
   if (input.location !== undefined) updated.location = input.location;
   if (input.attendees) updated.attendees = input.attendees.map((email) => ({ email }));
+  if (input.recurrence !== undefined)
+    updated.recurrence = input.recurrence ? [buildRRule(input.recurrence)] : [];
+  if (input.reminders !== undefined)
+    updated.reminders = input.reminders
+      ? { useDefault: false, overrides: input.reminders }
+      : { useDefault: true };
 
   const response = await calendar.events.update({
     calendarId: "primary",

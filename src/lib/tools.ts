@@ -79,6 +79,47 @@ export const tools: Anthropic.Tool[] = [
           type: "boolean",
           description: "If true, automatically generates and attaches a Google Meet link to the event",
         },
+        recurrence: {
+          type: "object",
+          description: "Make this a recurring event",
+          properties: {
+            frequency: {
+              type: "string",
+              enum: ["daily", "weekly", "monthly", "yearly"],
+              description: "How often the event repeats",
+            },
+            interval: {
+              type: "number",
+              description: "Repeat every N periods (e.g. interval 2 with weekly = every 2 weeks). Defaults to 1.",
+            },
+            days_of_week: {
+              type: "array",
+              items: { type: "string", enum: ["MO", "TU", "WE", "TH", "FR", "SA", "SU"] },
+              description: "For weekly recurrence, which days (e.g. ['MO', 'WE', 'FR'])",
+            },
+            end_date: {
+              type: "string",
+              description: "Stop recurring after this date (YYYY-MM-DD). Omit for indefinite.",
+            },
+            count: {
+              type: "number",
+              description: "Stop after this many occurrences. Omit for indefinite.",
+            },
+          },
+          required: ["frequency"],
+        },
+        reminders: {
+          type: "array",
+          description: "Notification reminders for the event. Omit to use calendar defaults.",
+          items: {
+            type: "object",
+            properties: {
+              method: { type: "string", enum: ["popup", "email"], description: "Notification method" },
+              minutes: { type: "number", description: "Minutes before event to notify" },
+            },
+            required: ["method", "minutes"],
+          },
+        },
       },
       required: ["title", "start_datetime", "end_datetime"],
     },
@@ -107,6 +148,36 @@ export const tools: Anthropic.Tool[] = [
           description: "New attendee list (replaces existing)",
         },
         location: { type: "string", description: "New location (omit to keep current)" },
+        recurrence: {
+          type: "object",
+          description: "Update the recurrence rule. Pass null to make the event non-recurring.",
+          properties: {
+            frequency: {
+              type: "string",
+              enum: ["daily", "weekly", "monthly", "yearly"],
+            },
+            interval: { type: "number" },
+            days_of_week: {
+              type: "array",
+              items: { type: "string", enum: ["MO", "TU", "WE", "TH", "FR", "SA", "SU"] },
+            },
+            end_date: { type: "string", description: "YYYY-MM-DD" },
+            count: { type: "number" },
+          },
+          required: ["frequency"],
+        },
+        reminders: {
+          type: "array",
+          description: "Replace event reminders. Pass null to restore calendar defaults.",
+          items: {
+            type: "object",
+            properties: {
+              method: { type: "string", enum: ["popup", "email"] },
+              minutes: { type: "number" },
+            },
+            required: ["method", "minutes"],
+          },
+        },
       },
       required: ["event_id"],
     },

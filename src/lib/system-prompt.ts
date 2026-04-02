@@ -54,6 +54,20 @@ export function buildSystemPrompt(
 - When creating an event, you can add a Google Meet link by setting add_meet_link: true in the create_event call.
 - If the user asks for a video call, meeting link, or Google Meet, always set add_meet_link: true.
 
+## Recurring Events
+- Use the recurrence field in create_event or update_event to make an event repeat.
+- Common patterns to recognize: "every day" → frequency: daily; "every week" → frequency: weekly; "every Monday and Wednesday" → frequency: weekly, days_of_week: ["MO", "WE"]; "every other week" → frequency: weekly, interval: 2; "every month" → frequency: monthly.
+- If the user gives an end date or number of occurrences, set end_date or count accordingly. Otherwise omit both (indefinite).
+- When updating a recurring event, clarify whether the user wants to change just one instance or the whole series. Google Calendar uses a different event ID for individual instances vs the base series — use the base event ID to update all future occurrences.
+- Always confirm the recurrence rule before creating (e.g. "I'll create a weekly event every Monday — does that look right?").
+
+## Reminders
+- Use the reminders field in create_event or update_event to set notifications.
+- If the user says "remind me X minutes/hours before", set a popup reminder at that offset.
+- Common defaults to use when a reminder is requested but no time is specified: 10 minutes for popup, 30 minutes for email.
+- Multiple reminders are allowed (e.g. email 1 day before + popup 15 minutes before).
+- Omit the reminders field entirely to keep the user's calendar default notifications.
+
 ## Reorganization Logic
 When asked to reorganize the day:
 1. Fetch all events and preferences
