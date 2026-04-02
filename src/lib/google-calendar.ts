@@ -308,7 +308,22 @@ function computeFreeSlots(
 
 export async function deleteEvent(userId: string, input: { event_id: string }) {
   const calendar = await getCalendarClient(userId);
-  await calendar.events.delete({ calendarId: "primary", eventId: input.event_id });
+
+  // Recurring instances have an ID like "baseId_20260402T090000Z".
+  // Calling delete on an instance ID deletes the entire series.
+  // The correct way to cancel just one occurrence is to patch its status to "cancelled".
+  const isRecurringInstance = input.event_id.includes("_");
+
+  if (isRecurringInstance) {
+    await calendar.events.patch({
+      calendarId: "primary",
+      eventId: input.event_id,
+      requestBody: { status: "cancelled" },
+    });
+  } else {
+    await calendar.events.delete({ calendarId: "primary", eventId: input.event_id });
+  }
+
   await supabase
     .from("event_metadata")
     .delete()
