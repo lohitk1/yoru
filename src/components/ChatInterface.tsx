@@ -76,6 +76,8 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const transcriptRef = useRef("");
+  const voiceCancelledRef = useRef(false);
   useEffect(() => {
     if (messages.length > 0 || loading) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -88,12 +90,16 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
 
   function toggleVoice() {
     if (isListening) {
+      voiceCancelledRef.current = true;
       recognitionRef.current?.stop();
       return;
     }
 
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) return;
+
+    transcriptRef.current = "";
+    voiceCancelledRef.current = false;
 
     const recognition = new SR();
     recognition.continuous = false;
@@ -106,16 +112,25 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
       const transcript = Array.from(event.results)
         .map((r) => r[0].transcript)
         .join("");
+      transcriptRef.current = transcript;
       setInput(transcript);
-      // Resize textarea to fit transcript
       if (inputRef.current) {
         inputRef.current.style.height = "auto";
         inputRef.current.style.height = inputRef.current.scrollHeight + "px";
       }
     };
 
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => {
+      setIsListening(false);
+      if (!voiceCancelledRef.current && transcriptRef.current.trim()) {
+        sendMessage(transcriptRef.current);
+        transcriptRef.current = "";
+      }
+    };
+    recognition.onerror = () => {
+      setIsListening(false);
+      transcriptRef.current = "";
+    };
 
     recognitionRef.current = recognition;
     recognition.start();
@@ -143,8 +158,8 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
     inputRef.current?.focus();
   }
 
-  async function sendMessage() {
-    const text = input.trim();
+  async function sendMessage(textOverride?: string) {
+    const text = (textOverride ?? input).trim();
     if (!text || loading) return;
 
     setInput("");
