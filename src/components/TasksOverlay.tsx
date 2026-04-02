@@ -27,11 +27,11 @@ export default function TasksOverlay({ onClose }: Props) {
   const [toggling, setToggling] = useState<Set<string>>(new Set());
   const [showCompleted, setShowCompleted] = useState(false);
 
-  async function fetchTasks(listId: string, withCompleted: boolean) {
+  async function fetchTasks(listId: string) {
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/tasks?tasklist_id=${encodeURIComponent(listId)}&include_completed=${withCompleted}`
+        `/api/tasks?tasklist_id=${encodeURIComponent(listId)}&include_completed=true`
       );
       const data = await res.json();
       setLists(data.lists ?? []);
@@ -42,8 +42,8 @@ export default function TasksOverlay({ onClose }: Props) {
   }
 
   useEffect(() => {
-    fetchTasks(activeListId, showCompleted);
-  }, [activeListId, showCompleted]);
+    fetchTasks(activeListId);
+  }, [activeListId]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -94,7 +94,7 @@ export default function TasksOverlay({ onClose }: Props) {
           </div>
           <div className="flex items-center gap-1">
             <button
-              onClick={() => fetchTasks(activeListId, showCompleted)}
+              onClick={() => fetchTasks(activeListId)}
               disabled={loading}
               className="text-zinc-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-zinc-800 disabled:opacity-30"
               title="Refresh"
