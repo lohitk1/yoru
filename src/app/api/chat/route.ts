@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     await saveMessage(conversationId, "user", message);
 
     const { response, updatedHistory } = await runChatLoop(
-      { googleId: session.googleId, supabaseUserId: session.supabaseUserId },
+      { googleId: session.googleId, supabaseUserId: session.supabaseUserId, email: session.user?.email ?? "" },
       conversationHistory ?? [],
       message,
       systemPrompt

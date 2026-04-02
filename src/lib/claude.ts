@@ -7,6 +7,7 @@ const client = new Anthropic();
 interface UserContext {
   googleId: string;
   supabaseUserId: string;
+  email: string;
 }
 
 type Message = Anthropic.MessageParam;

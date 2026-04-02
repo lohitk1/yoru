@@ -1,9 +1,10 @@
-import { getEvents, createEvent, updateEvent, deleteEvent, findFreeSlots } from "./google-calendar";
+import { getEvents, createEvent, updateEvent, deleteEvent, findFreeSlots, rsvpEvent } from "./google-calendar";
 import { getPreferences, upsertMetadata, markStatus, getStats } from "./supabase";
 
 interface UserContext {
   googleId: string;
   supabaseUserId: string;
+  email: string;
 }
 
 export async function handleToolCall(
@@ -19,13 +20,20 @@ export async function handleToolCall(
       return findFreeSlots(user.googleId, input as any);
 
     case "create_event":
-      return createEvent(user.googleId, input as any);
+      return createEvent(user.googleId, user.email, input as any);
 
     case "update_event":
       return updateEvent(user.googleId, input as any);
 
     case "delete_event":
       return deleteEvent(user.googleId, input as { event_id: string });
+
+    case "rsvp_event":
+      return rsvpEvent(user.googleId, user.email, {
+        event_id: input.event_id,
+        status: input.status,
+        send_notifications: input.send_notifications,
+      });
 
     case "update_event_metadata":
       return upsertMetadata(user.supabaseUserId, {

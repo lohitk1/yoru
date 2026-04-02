@@ -185,6 +185,28 @@ export const tools: Anthropic.Tool[] = [
     },
   },
   {
+    name: "rsvp_event",
+    description:
+      "Accept, decline, or tentatively accept a calendar event invitation. Use this when the user wants to respond to a meeting invite. IMPORTANT: Always confirm with the user before declining an event.",
+    input_schema: {
+      type: "object",
+      properties: {
+        event_id: { type: "string", description: "The Google Calendar event ID to respond to" },
+        status: {
+          type: "string",
+          enum: ["accepted", "declined", "tentative"],
+          description: "The RSVP response: 'accepted', 'declined', or 'tentative'",
+        },
+        send_notifications: {
+          type: "boolean",
+          description:
+            "Whether to notify the event organizer of the response. Default true for declines, false for accepts.",
+        },
+      },
+      required: ["event_id", "status"],
+    },
+  },
+  {
     name: "get_event_stats",
     description:
       "Get statistics about event completion patterns. Useful for identifying trends like frequently skipped meetings or categories with low completion rates.",

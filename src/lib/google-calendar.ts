@@ -79,6 +79,7 @@ export async function getEvents(
 
 export async function createEvent(
   userId: string,
+  userEmail: string,
   input: {
     title: string;
     start_datetime: string;
@@ -99,7 +100,10 @@ export async function createEvent(
       end: { dateTime: input.end_datetime },
       description: input.description,
       location: input.location,
-      attendees: input.attendees?.map((email) => ({ email })),
+      attendees: input.attendees?.map((email) => ({
+        email,
+        responseStatus: email === userEmail ? "accepted" : undefined,
+      })),
       ...(input.add_meet_link && {
         conferenceData: {
           createRequest: {
@@ -109,6 +113,38 @@ export async function createEvent(
         },
       }),
     },
+  });
+  return response.data;
+}
+
+export async function rsvpEvent(
+  userId: string,
+  userEmail: string,
+  input: {
+    event_id: string;
+    status: "accepted" | "declined" | "tentative";
+    send_notifications?: boolean;
+  }
+) {
+  const calendar = await getCalendarClient(userId);
+  const existing = await calendar.events.get({
+    calendarId: "primary",
+    eventId: input.event_id,
+  });
+
+  const attendees = existing.data.attendees ?? [];
+  const userAttendee = attendees.find((a) => a.email === userEmail);
+  if (userAttendee) {
+    userAttendee.responseStatus = input.status;
+  } else {
+    attendees.push({ email: userEmail, responseStatus: input.status });
+  }
+
+  const response = await calendar.events.patch({
+    calendarId: "primary",
+    eventId: input.event_id,
+    sendUpdates: input.send_notifications ? "all" : "none",
+    requestBody: { attendees },
   });
   return response.data;
 }
