@@ -481,7 +481,7 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
               </button>
             )}
             <button
-              onClick={sendMessage}
+              onClick={() => sendMessage()}
               disabled={!input.trim() || loading}
               className="text-white bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:cursor-not-allowed rounded-full p-1.5 transition-colors mb-0.5"
             >
