@@ -278,6 +278,86 @@ export const tools: Anthropic.Tool[] = [
     },
   },
   {
+    name: "get_tasks",
+    description:
+      "Fetch the user's Google Tasks. Returns tasks from the specified list (or the default list). Use this to see what tasks the user has.",
+    input_schema: {
+      type: "object",
+      properties: {
+        tasklist_id: {
+          type: "string",
+          description: "The task list ID to fetch from. Omit to use the default list.",
+        },
+        include_completed: {
+          type: "boolean",
+          description: "Whether to include completed tasks. Defaults to false.",
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "create_task",
+    description:
+      "Create a new task in the user's Google Tasks. IMPORTANT: Always confirm with the user before calling this tool.",
+    input_schema: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "Task title" },
+        notes: { type: "string", description: "Additional notes or description" },
+        due: {
+          type: "string",
+          description: "Due date in ISO 8601 format (e.g. '2025-04-10T00:00:00Z')",
+        },
+        tasklist_id: {
+          type: "string",
+          description: "Task list to add to. Omit for default list.",
+        },
+      },
+      required: ["title"],
+    },
+  },
+  {
+    name: "update_task",
+    description:
+      "Update an existing task — change its title, notes, due date, or mark it complete/incomplete. IMPORTANT: Always confirm before marking complete or changing details.",
+    input_schema: {
+      type: "object",
+      properties: {
+        task_id: { type: "string", description: "The task ID to update" },
+        tasklist_id: {
+          type: "string",
+          description: "The task list the task belongs to. Omit for default list.",
+        },
+        title: { type: "string", description: "New title (omit to keep current)" },
+        notes: { type: "string", description: "New notes (omit to keep current)" },
+        due: { type: "string", description: "New due date in ISO 8601 format" },
+        status: {
+          type: "string",
+          enum: ["needsAction", "completed"],
+          description: "'completed' to mark done, 'needsAction' to mark incomplete",
+        },
+      },
+      required: ["task_id"],
+    },
+  },
+  {
+    name: "delete_task",
+    description:
+      "Delete a task from the user's Google Tasks. IMPORTANT: Always confirm with the user before calling this tool.",
+    input_schema: {
+      type: "object",
+      properties: {
+        task_id: { type: "string", description: "The task ID to delete" },
+        tasklist_id: {
+          type: "string",
+          description: "The task list the task belongs to. Omit for default list.",
+        },
+      },
+      required: ["task_id"],
+    },
+  },
+  {
     name: "get_event_stats",
     description:
       "Get statistics about event completion patterns. Useful for identifying trends like frequently skipped meetings or categories with low completion rates.",

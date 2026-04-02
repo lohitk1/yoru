@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Sidebar from "./Sidebar";
 import CalendarOverlay from "./CalendarOverlay";
+import TasksOverlay from "./TasksOverlay";
 import type { ConversationSummary } from "@/lib/supabase";
 
 interface Message {
@@ -33,6 +34,7 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
   const [loadingConversation, setLoadingConversation] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [tasksOpen, setTasksOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const briefingFired = useRef(false);
@@ -219,6 +221,15 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </button>
+            <button
+              onClick={() => setTasksOpen(true)}
+              className="text-zinc-400 hover:text-white transition-colors p-1 rounded-md hover:bg-zinc-800"
+              title="View tasks"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+            </button>
             <form action={onSignOut}>
               <button type="submit" className="text-zinc-500 hover:text-zinc-300 text-xs transition-colors">
                 Sign out
@@ -335,6 +346,7 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
         </div>
       </div>
       {calendarOpen && <CalendarOverlay onClose={() => setCalendarOpen(false)} />}
+      {tasksOpen && <TasksOverlay onClose={() => setTasksOpen(false)} />}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { getEvents, createEvent, updateEvent, deleteEvent, findFreeSlots, rsvpEvent } from "./google-calendar";
+import { getTaskLists, getTasks, createTask, updateTask, deleteTask } from "./google-tasks";
 import { getPreferences, upsertMetadata, markStatus, getStats } from "./supabase";
 
 interface UserContext {
@@ -33,6 +34,36 @@ export async function handleToolCall(
         event_id: input.event_id,
         status: input.status,
         send_notifications: input.send_notifications,
+      });
+
+    case "get_tasks":
+      return getTasks(user.googleId, {
+        tasklist_id: input.tasklist_id,
+        include_completed: input.include_completed,
+      });
+
+    case "create_task":
+      return createTask(user.googleId, {
+        title: input.title,
+        notes: input.notes,
+        due: input.due,
+        tasklist_id: input.tasklist_id,
+      });
+
+    case "update_task":
+      return updateTask(user.googleId, {
+        task_id: input.task_id,
+        tasklist_id: input.tasklist_id,
+        title: input.title,
+        notes: input.notes,
+        due: input.due,
+        status: input.status,
+      });
+
+    case "delete_task":
+      return deleteTask(user.googleId, {
+        task_id: input.task_id,
+        tasklist_id: input.tasklist_id,
       });
 
     case "update_event_metadata":
