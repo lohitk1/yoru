@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
   }
 
   const googleId = session.googleId;
+  const userEmail = session.user?.email ?? "";
   const supabaseUserId = session.supabaseUserId;
   const body = await request.json();
   const { tool, input } = body;
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
         result = await getEvents(googleId, input);
         break;
       case "createEvent":
-        result = await createEvent(googleId, input);
+        result = await createEvent(googleId, userEmail, input);
         break;
       case "updateEvent":
         result = await updateEvent(googleId, input);
