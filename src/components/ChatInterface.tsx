@@ -8,6 +8,14 @@ import CalendarOverlay from "./CalendarOverlay";
 import TasksOverlay from "./TasksOverlay";
 import type { ConversationSummary } from "@/lib/supabase";
 
+// Web Speech API types
+declare global {
+  interface Window {
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+}
+
 interface Message {
   role: "user" | "assistant";
   content: string;
@@ -37,13 +45,55 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   useEffect(() => {
     if (messages.length > 0 || loading) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, loading]);
+
+  useEffect(() => {
+    setSpeechSupported(!!(window.SpeechRecognition || window.webkitSpeechRecognition));
+  }, []);
+
+  function toggleVoice() {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+
+    const recognition = new SR();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+
+    recognition.onstart = () => setIsListening(true);
+
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map((r) => r[0].transcript)
+        .join("");
+      setInput(transcript);
+      // Resize textarea to fit transcript
+      if (inputRef.current) {
+        inputRef.current.style.height = "auto";
+        inputRef.current.style.height = inputRef.current.scrollHeight + "px";
+      }
+    };
+
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  }
 
   async function loadConversation(id: string) {
     setLoadingConversation(true);
@@ -363,7 +413,7 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Message Yoru..."
+              placeholder={isListening ? "Listening…" : "Message Yoru..."}
               rows={1}
               className="flex-1 bg-transparent text-white text-sm placeholder-zinc-500 resize-none outline-none max-h-32 py-1"
               style={{ height: "auto" }}
@@ -373,6 +423,22 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
                 el.style.height = el.scrollHeight + "px";
               }}
             />
+            {speechSupported && (
+              <button
+                onClick={toggleVoice}
+                disabled={loading}
+                title={isListening ? "Stop listening" : "Speak a message"}
+                className={`rounded-full p-1.5 transition-colors mb-0.5 ${
+                  isListening
+                    ? "text-red-400 bg-red-400/10 hover:bg-red-400/20 animate-pulse"
+                    : "text-zinc-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
+                }`}
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm0 2a2 2 0 0 0-2 2v6a2 2 0 0 0 4 0V5a2 2 0 0 0-2-2zm-1 14.93V20H9v2h6v-2h-2v-2.07A7.001 7.001 0 0 0 19 11h-2a5 5 0 0 1-10 0H5a7.001 7.001 0 0 0 6 6.93z" />
+                </svg>
+              </button>
+            )}
             <button
               onClick={sendMessage}
               disabled={!input.trim() || loading}
