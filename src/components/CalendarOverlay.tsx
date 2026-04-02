@@ -9,6 +9,7 @@ interface RawEvent {
   summary?: string;
   start: { dateTime?: string; date?: string };
   end: { dateTime?: string; date?: string };
+  metadata?: { status?: string | null } | null;
 }
 
 interface TimedEvent extends RawEvent {
@@ -78,6 +79,8 @@ export default function CalendarOverlay({ onClose }: Props) {
   const [events, setEvents] = useState<RawEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateLabel, setDateLabel] = useState("");
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const [toggling, setToggling] = useState<Set<string>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
 
   async function fetchEvents() {
@@ -85,7 +88,11 @@ export default function CalendarOverlay({ onClose }: Props) {
     try {
       const res = await fetch(`/api/calendar/today?timezone=${encodeURIComponent(timezone)}`);
       const data = await res.json();
-      setEvents(data.events ?? []);
+      const fetched: RawEvent[] = data.events ?? [];
+      setEvents(fetched);
+      setCompletedIds(
+        new Set(fetched.filter((e) => e.metadata?.status === "completed").map((e) => e.id))
+      );
       if (data.date) {
         setDateLabel(
           new Date(data.date + "T12:00:00").toLocaleDateString("en-US", {
@@ -103,6 +110,34 @@ export default function CalendarOverlay({ onClose }: Props) {
   useEffect(() => {
     fetchEvents();
   }, []);
+
+  async function toggleEventDone(eventId: string) {
+    const isDone = completedIds.has(eventId);
+    const newStatus = isDone ? null : "completed";
+    setToggling((s) => new Set(s).add(eventId));
+    // Optimistic
+    setCompletedIds((prev) => {
+      const next = new Set(prev);
+      isDone ? next.delete(eventId) : next.add(eventId);
+      return next;
+    });
+    try {
+      await fetch("/api/calendar/status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event_id: eventId, status: newStatus }),
+      });
+    } catch {
+      // Revert on failure
+      setCompletedIds((prev) => {
+        const next = new Set(prev);
+        isDone ? next.add(eventId) : next.delete(eventId);
+        return next;
+      });
+    } finally {
+      setToggling((s) => { const n = new Set(s); n.delete(eventId); return n; });
+    }
+  }
 
   // Scroll to 1 hour before current time (min 7 AM) after events load
   useEffect(() => {
@@ -254,11 +289,17 @@ export default function CalendarOverlay({ onClose }: Props) {
                   const widthPct = 100 / ev.cols;
                   const leftPct = (ev.col / ev.cols) * 100;
                   const isShort = height < 38;
+                  const done = completedIds.has(ev.id);
+                  const isToggling = toggling.has(ev.id);
 
                   return (
                     <div
                       key={ev.id}
-                      className="absolute rounded-md bg-indigo-950 border-l-2 border-indigo-500 px-2 py-1 overflow-hidden"
+                      className={`absolute rounded-md border-l-2 px-2 py-1 overflow-hidden flex gap-1.5 items-start transition-colors ${
+                        done
+                          ? "bg-zinc-800/60 border-zinc-600"
+                          : "bg-indigo-950 border-indigo-500"
+                      }`}
                       style={{
                         top,
                         height,
@@ -266,14 +307,31 @@ export default function CalendarOverlay({ onClose }: Props) {
                         width: `calc(${widthPct}% - 4px)`,
                       }}
                     >
-                      <p className="text-indigo-200 text-xs font-medium leading-tight truncate">
-                        {ev.summary || "Untitled"}
-                      </p>
-                      {!isShort && ev.start.dateTime && ev.end.dateTime && (
-                        <p className="text-indigo-400 text-xs mt-0.5 truncate">
-                          {formatTime(ev.start.dateTime, timezone)} – {formatTime(ev.end.dateTime, timezone)}
+                      <button
+                        onClick={() => toggleEventDone(ev.id)}
+                        disabled={isToggling}
+                        className={`shrink-0 mt-0.5 w-3.5 h-3.5 rounded-full border transition-colors ${
+                          done
+                            ? "bg-zinc-500 border-zinc-500"
+                            : "border-indigo-500 hover:border-indigo-300"
+                        } ${isToggling ? "opacity-50" : ""}`}
+                      >
+                        {done && (
+                          <svg className="w-full h-full p-[1px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-xs font-medium leading-tight truncate ${done ? "text-zinc-500 line-through" : "text-indigo-200"}`}>
+                          {ev.summary || "Untitled"}
                         </p>
-                      )}
+                        {!isShort && ev.start.dateTime && ev.end.dateTime && (
+                          <p className={`text-xs mt-0.5 truncate ${done ? "text-zinc-600" : "text-indigo-400"}`}>
+                            {formatTime(ev.start.dateTime, timezone)} – {formatTime(ev.end.dateTime, timezone)}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
