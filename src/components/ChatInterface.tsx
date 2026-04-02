@@ -11,6 +11,7 @@ import type { ConversationSummary } from "@/lib/supabase";
 interface Message {
   role: "user" | "assistant";
   content: string;
+  confirmPending?: boolean;
 }
 
 interface ApiMessage {
@@ -32,6 +33,7 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingConversation, setLoadingConversation] = useState(false);
+  const [noInput, setNoInput] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
@@ -89,7 +91,7 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
       if (data.error) throw new Error(data.error);
 
       setConversationHistory(data.conversationHistory);
-      setMessages((prev) => [...prev, { role: "assistant", content: data.response }]);
+      setMessages((prev) => [...prev, { role: "assistant", content: data.response, confirmPending: !!data.awaitingConfirmation }]);
 
       // If this was a new conversation, add it to the list and set it as active
       if (!activeConversationId && data.conversationId) {
@@ -119,6 +121,40 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
         ...prev,
         { role: "assistant", content: "Sorry, something went wrong. Please try again." },
       ]);
+    } finally {
+      setLoading(false);
+      inputRef.current?.focus();
+    }
+  }
+
+  function dismissConfirm(index: number) {
+    setMessages((prev) => prev.map((m, i) => i === index ? { ...m, confirmPending: false } : m));
+  }
+
+  async function sendConfirmation(confirmed: boolean, index: number) {
+    dismissConfirm(index);
+    setNoInput("");
+    const text = confirmed ? "Yes, go ahead." : (noInput.trim() || "No, cancel.");
+    setInput("");
+    setMessages((prev) => [...prev, { role: "user", content: text }]);
+    setLoading(true);
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: text,
+          conversationHistory,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          conversationId: activeConversationId,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setConversationHistory(data.conversationHistory);
+      setMessages((prev) => [...prev, { role: "assistant", content: data.response, confirmPending: !!data.awaitingConfirmation }]);
+    } catch {
+      setMessages((prev) => [...prev, { role: "assistant", content: "Sorry, something went wrong. Please try again." }]);
     } finally {
       setLoading(false);
       inputRef.current?.focus();
@@ -212,7 +248,7 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
             </div>
           ) : (
             messages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div key={i} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
                 <div
                   className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${
                     msg.role === "user"
@@ -252,6 +288,54 @@ export default function ChatInterface({ userName, initialConversations, onSignOu
                     msg.content
                   )}
                 </div>
+                {msg.confirmPending && !loading && (
+                  <div className="mt-2 max-w-[85%] space-y-2">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => sendConfirmation(true, i)}
+                        className="px-4 py-1.5 rounded-full bg-white text-black text-xs font-medium hover:bg-zinc-200 transition-colors"
+                      >
+                        Yes, go ahead
+                      </button>
+                      <button
+                        onClick={() => dismissConfirm(i)}
+                        className="px-4 py-1.5 rounded-full border border-zinc-700 text-zinc-300 text-xs hover:bg-zinc-800 transition-colors"
+                      >
+                        No
+                      </button>
+                    </div>
+                    <div className="flex gap-2 items-end">
+                      <textarea
+                        value={noInput}
+                        onChange={(e) => setNoInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            sendConfirmation(false, i);
+                          }
+                        }}
+                        placeholder="No, instead…"
+                        rows={1}
+                        className="flex-1 bg-zinc-900 text-white text-xs placeholder-zinc-600 rounded-xl px-3 py-2 resize-none outline-none border border-zinc-700 focus:border-zinc-500 max-h-24"
+                        style={{ height: "auto" }}
+                        onInput={(e) => {
+                          const el = e.currentTarget;
+                          el.style.height = "auto";
+                          el.style.height = el.scrollHeight + "px";
+                        }}
+                      />
+                      <button
+                        onClick={() => sendConfirmation(false, i)}
+                        disabled={!noInput.trim()}
+                        className="text-zinc-400 hover:text-white disabled:opacity-30 transition-colors p-1.5"
+                      >
+                        <svg className="w-4 h-4 rotate-90" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))
           )}

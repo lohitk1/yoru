@@ -53,10 +53,16 @@ export async function POST(req: NextRequest) {
       systemPrompt
     );
 
-    // Save assistant response
-    await saveMessage(conversationId, "assistant", response);
+    const CONFIRM_MARKER = "[CONFIRM]";
+    const awaitingConfirmation = response.trimEnd().endsWith(CONFIRM_MARKER);
+    const cleanResponse = awaitingConfirmation
+      ? response.trimEnd().slice(0, -CONFIRM_MARKER.length).trimEnd()
+      : response;
 
-    return Response.json({ response, conversationHistory: updatedHistory, conversationId });
+    // Save assistant response without the marker
+    await saveMessage(conversationId, "assistant", cleanResponse);
+
+    return Response.json({ response: cleanResponse, awaitingConfirmation, conversationHistory: updatedHistory, conversationId });
   } catch (err: any) {
     console.error("Chat error:", err);
     return Response.json({ error: "Failed to process message" }, { status: 500 });
